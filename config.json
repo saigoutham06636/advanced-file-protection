@@ -1,0 +1,13 @@
+{
+  "email": {
+    "smtp_server": "smtp.gmail.com",
+    "smtp_port": 587,
+    "use_tls": true,
+    "sender_email": "darkdevvill2006@gmail.com",
+    "sender_password": "whxknanundvsxric",
+    "recipient_email": "23h51a6224@cmrcet.ac.in"
+  },
+  "key_rotation": {
+    "interval_seconds": 30
+  }
+}
