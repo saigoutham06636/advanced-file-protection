@@ -6,7 +6,7 @@ from typing import Optional
 
 from crypto_engine import encrypt_file, decrypt_file
 from key_manager import KeyRotationManager
-from email_alerts import load_email_config, send_key_email_async
+from email_alerts import load_email_profiles, send_key_email_to_all
 import json
 
 
@@ -32,8 +32,8 @@ class App:
 
         self.selected_file: Optional[Path] = None
 
-        # Load config
-        self.email_config = load_email_config()
+        # Load config (supporting multiple email profiles)
+        self.email_profiles = load_email_profiles()
         interval = load_rotation_interval(default=30)
 
         # Key rotation manager
@@ -98,12 +98,12 @@ class App:
         self.lbl_password.config(text=f"Current Password: {password}")
         self.log("[KeyRotation] New password generated and displayed.")
 
-        # Send email if config is available
-        if self.email_config is None:
+        # Send email if profiles are available
+        if not self.email_profiles:
             self.log("[Email] Email configuration not found. Skipping email notification.")
         else:
-            self.log("[Email] Sending new password to configured recipient...")
-            send_key_email_async(self.email_config, password)
+            self.log("[Email] Sending new password to configured recipients via all profiles...")
+            send_key_email_to_all(self.email_profiles, password)
 
     def _on_tick(self, password: str, seconds_left: int) -> None:
         self.lbl_countdown.config(text=f"Next rotation in: {seconds_left} s")

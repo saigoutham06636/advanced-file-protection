@@ -7,9 +7,8 @@ from flask import Flask, render_template, request, redirect, url_for, send_from_
 
 from crypto_engine import encrypt_file, decrypt_file
 from key_manager import KeyRotationManager
-from email_alerts import load_email_config, send_key_email_async
+from email_alerts import load_email_profiles, send_key_email_with_override
 import json
-
 BASE_DIR = Path(__file__).resolve().parent
 UPLOAD_DIR = BASE_DIR / "uploads"
 ENCRYPTED_DIR = BASE_DIR / "encrypted"
@@ -34,8 +33,13 @@ def load_rotation_interval(default: int = 30) -> int:
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-secret-key")  # for flash messages / demo
 
-email_config = load_email_config()
+email_profiles = load_email_profiles()
 rotation_interval = load_rotation_interval(default=30)
+
+# Current email settings; set only from the web UI.
+current_sender_email = None
+current_sender_password = None
+current_recipient_email = None
 
 key_manager = KeyRotationManager(
     interval_seconds=rotation_interval,
@@ -43,9 +47,20 @@ key_manager = KeyRotationManager(
 
 
 def on_new_password(password: str) -> None:
-    # Email the new key to the configured recipient
-    if email_config is not None:
-        send_key_email_async(email_config, password)
+    # Email the new key only to the currently configured email settings.
+    global current_sender_email, current_sender_password, current_recipient_email
+    if not (email_profiles and current_sender_email and current_sender_password and current_recipient_email):
+        return
+
+    # Use the first email profile as SMTP template (server/port/TLS), but override sender + recipients
+    template = email_profiles[0]
+    send_key_email_with_override(
+        template=template,
+        sender_email=current_sender_email,
+        sender_password=current_sender_password,
+        recipients=[current_recipient_email],
+        password=password,
+    )
 
 
 def on_tick(password: str, seconds_left: int) -> None:
@@ -75,13 +90,31 @@ threading.Thread(target=_rotation_loop, daemon=True).start()
 
 @app.route("/")
 def index():
-    password = key_manager.current_password
     seconds_left = key_manager.seconds_until_rotation
     return render_template(
         "index.html",
-        current_password=password,
         seconds_left=seconds_left,
+        current_recipient=current_recipient_email,
+        current_sender=current_sender_email,
     )
+
+
+@app.route("/set_email_settings", methods=["POST"])
+def set_email_settings():
+    global current_sender_email, current_sender_password, current_recipient_email
+    sender = request.form.get("sender_email", "").strip()
+    app_password = request.form.get("sender_password", "").strip()
+    receiver = request.form.get("recipient_email", "").strip()
+
+    if not sender or not app_password or not receiver:
+        flash("Sender email, app password, and receiver email are all required.", "error")
+    else:
+        current_sender_email = sender
+        current_sender_password = app_password
+        current_recipient_email = receiver
+        flash(f"Email settings updated. Keys will be sent from {sender} to {receiver}.", "success")
+
+    return redirect(url_for("index"))
 
 
 @app.route("/api/status")

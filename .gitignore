@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+uploads/
+encrypted/
+decrypted/
+_tmp_*
+.env

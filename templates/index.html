@@ -30,15 +30,54 @@
     </div>
 
     <div class="section key-info mb-4">
-        <h2 class="h4 mb-3">Current Time-based Key</h2>
-        <p class="d-flex align-items-center gap-2 flex-wrap">
-            <strong class="me-1">Current Password:</strong>
-            <code id="current-password" class="mb-0">{{ current_password }}</code>
-            <button type="button" id="toggle-password" class="btn btn-sm btn-outline-secondary">Hide</button>
-            <button type="button" id="copy-password" class="btn btn-sm btn-outline-primary">Copy</button>
+        <h2 class="h4 mb-3">Key Rotation Status</h2>
+        <p>
+            <strong>Sender email:</strong>
+            {% if current_sender %}
+                <span class="badge bg-info">{{ current_sender }}</span>
+            {% else %}
+                <span class="badge bg-secondary">Not set</span>
+            {% endif %}
         </p>
-        <p><strong>Next rotation in:</strong> <span id="seconds-left" class="badge bg-primary">{{ seconds_left }} seconds</span></p>
-        <p class="note mt-2">A new high-entropy password is generated automatically every configured interval (default 30 seconds) and emailed to the authorized user. In a production system this value would typically not be shown directly on the screen.</p>
+        <p>
+            <strong>Receiver email:</strong>
+            {% if current_recipient %}
+                <span class="badge bg-success">{{ current_recipient }}</span>
+            {% else %}
+                <span class="badge bg-secondary">Not set</span>
+            {% endif %}
+        </p>
+        <p><strong>Next rotation in:</strong>
+           <span id="seconds-left" class="badge bg-primary">{{ seconds_left }} seconds</span>
+        </p>
+        <p class="note mt-2">
+            A high-entropy key is generated automatically every configured interval and sent only
+            to the receiver email configured below. The key itself is never displayed on this page.
+        </p>
+    </div>
+
+    <div class="section mb-4">
+        <h2 class="h4 mb-3">Configure Email Settings</h2>
+        <form action="{{ url_for('set_email_settings') }}" method="post" class="row g-3">
+            <div class="col-12 col-md-4">
+                <label for="sender_email" class="form-label">Sender email</label>
+                <input type="email" name="sender_email" id="sender_email" class="form-control"
+                       value="{{ current_sender or '' }}" required>
+            </div>
+            <div class="col-12 col-md-4">
+                <label for="sender_password" class="form-label">App password</label>
+                <input type="password" name="sender_password" id="sender_password" class="form-control" required>
+            </div>
+            <div class="col-12 col-md-4">
+                <label for="recipient_email" class="form-label">Receiver email</label>
+                <input type="email" name="recipient_email" id="recipient_email" class="form-control"
+                       value="{{ current_recipient or '' }}" required>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-outline-primary">Save Email Settings</button>
+            </div>
+        </form>
+        <p class="note mt-2">All newly generated keys will be sent from the configured sender to the configured receiver.</p>
     </div>
 
     <div class="section mb-4">
@@ -80,66 +119,13 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     (function() {
-        const passwordEl = document.getElementById('current-password');
         const secondsEl = document.getElementById('seconds-left');
-        const toggleBtn = document.getElementById('toggle-password');
-        const copyBtn = document.getElementById('copy-password');
-        let passwordVisible = true;
-        let lastPlainPassword = passwordEl ? passwordEl.textContent : '';
-
-        function updatePasswordDisplay() {
-            if (!passwordEl || !toggleBtn) return;
-            if (passwordVisible) {
-                passwordEl.textContent = lastPlainPassword;
-                toggleBtn.textContent = 'Hide';
-            } else {
-                passwordEl.textContent = '********';
-                toggleBtn.textContent = 'Show';
-            }
-        }
-
-        if (toggleBtn) {
-            toggleBtn.addEventListener('click', function() {
-                passwordVisible = !passwordVisible;
-                updatePasswordDisplay();
-            });
-        }
-
-        if (copyBtn) {
-            copyBtn.addEventListener('click', async function() {
-                try {
-                    if (!lastPlainPassword) return;
-                    if (navigator.clipboard && navigator.clipboard.writeText) {
-                        await navigator.clipboard.writeText(lastPlainPassword);
-                    } else {
-                        // Fallback: create temporary input
-                        const tmp = document.createElement('input');
-                        tmp.value = lastPlainPassword;
-                        document.body.appendChild(tmp);
-                        tmp.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(tmp);
-                    }
-                    copyBtn.textContent = 'Copied';
-                    setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1500);
-                } catch (e) {
-                    // Ignore copy errors in demo
-                }
-            });
-        }
 
         async function refreshStatus() {
             try {
                 const resp = await fetch('/api/status');
                 if (!resp.ok) return;
                 const data = await resp.json();
-
-                if (typeof data.currentPassword === 'string') {
-                    lastPlainPassword = data.currentPassword;
-                    if (passwordVisible && passwordEl) {
-                        passwordEl.textContent = lastPlainPassword;
-                    }
-                }
 
                 if (typeof data.secondsLeft === 'number' && secondsEl) {
                     secondsEl.textContent = data.secondsLeft + ' seconds';
@@ -149,9 +135,7 @@
             }
         }
 
-        // Initial state
-        updatePasswordDisplay();
-        // Poll backend every second for live updates
+        // Poll backend every second for live countdown updates
         setInterval(refreshStatus, 1000);
     })();
 </script>
