@@ -10,3 +10,7 @@ services:
         value: 3.11.0
       - key: FLASK_SECRET_KEY
         generateValue: true
+      - key: SYSTEM_EMAIL_SENDER
+        value: "your.project.bot@gmail.com"
+      - key: SYSTEM_EMAIL_PASSWORD
+        value: "your-app-password"

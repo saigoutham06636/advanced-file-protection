@@ -36,9 +36,11 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-secret-key")  # for fla
 email_profiles = load_email_profiles()
 rotation_interval = load_rotation_interval(default=30)
 
-# Current email settings; set only from the web UI.
-current_sender_email = None
-current_sender_password = None
+# System email sender settings (read from environment variables)
+SYSTEM_SENDER_EMAIL = os.environ.get("SYSTEM_EMAIL_SENDER", "")
+SYSTEM_SENDER_PASSWORD = os.environ.get("SYSTEM_EMAIL_PASSWORD", "")
+
+# Current recipient setting; set only from the web UI.
 current_recipient_email = None
 
 key_manager = KeyRotationManager(
@@ -47,17 +49,17 @@ key_manager = KeyRotationManager(
 
 
 def on_new_password(password: str) -> None:
-    # Email the new key only to the currently configured email settings.
-    global current_sender_email, current_sender_password, current_recipient_email
-    if not (email_profiles and current_sender_email and current_sender_password and current_recipient_email):
+    # Email the new key only to the currently configured recipient email.
+    global current_recipient_email
+    if not (email_profiles and SYSTEM_SENDER_EMAIL and SYSTEM_SENDER_PASSWORD and current_recipient_email):
         return
 
     # Use the first email profile as SMTP template (server/port/TLS), but override sender + recipients
     template = email_profiles[0]
     send_key_email_with_override(
         template=template,
-        sender_email=current_sender_email,
-        sender_password=current_sender_password,
+        sender_email=SYSTEM_SENDER_EMAIL,
+        sender_password=SYSTEM_SENDER_PASSWORD,
         recipients=[current_recipient_email],
         password=password,
     )
@@ -95,24 +97,19 @@ def index():
         "index.html",
         seconds_left=seconds_left,
         current_recipient=current_recipient_email,
-        current_sender=current_sender_email,
     )
 
 
 @app.route("/set_email_settings", methods=["POST"])
 def set_email_settings():
-    global current_sender_email, current_sender_password, current_recipient_email
-    sender = request.form.get("sender_email", "").strip()
-    app_password = request.form.get("sender_password", "").strip()
+    global current_recipient_email
     receiver = request.form.get("recipient_email", "").strip()
 
-    if not sender or not app_password or not receiver:
-        flash("Sender email, app password, and receiver email are all required.", "error")
+    if not receiver:
+        flash("Receiver email is required.", "error")
     else:
-        current_sender_email = sender
-        current_sender_password = app_password
         current_recipient_email = receiver
-        flash(f"Email settings updated. Keys will be sent from {sender} to {receiver}.", "success")
+        flash(f"Receiver email updated. Keys will be sent to {receiver}.", "success")
 
     return redirect(url_for("index"))
 

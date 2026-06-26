@@ -32,14 +32,6 @@
     <div class="section key-info mb-4">
         <h2 class="h4 mb-3">Key Rotation Status</h2>
         <p>
-            <strong>Sender email:</strong>
-            {% if current_sender %}
-                <span class="badge bg-info">{{ current_sender }}</span>
-            {% else %}
-                <span class="badge bg-secondary">Not set</span>
-            {% endif %}
-        </p>
-        <p>
             <strong>Receiver email:</strong>
             {% if current_recipient %}
                 <span class="badge bg-success">{{ current_recipient }}</span>
@@ -59,25 +51,16 @@
     <div class="section mb-4">
         <h2 class="h4 mb-3">Configure Email Settings</h2>
         <form action="{{ url_for('set_email_settings') }}" method="post" class="row g-3">
-            <div class="col-12 col-md-4">
-                <label for="sender_email" class="form-label">Sender email</label>
-                <input type="email" name="sender_email" id="sender_email" class="form-control"
-                       value="{{ current_sender or '' }}" required>
-            </div>
-            <div class="col-12 col-md-4">
-                <label for="sender_password" class="form-label">App password</label>
-                <input type="password" name="sender_password" id="sender_password" class="form-control" required>
-            </div>
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-6">
                 <label for="recipient_email" class="form-label">Receiver email</label>
                 <input type="email" name="recipient_email" id="recipient_email" class="form-control"
                        value="{{ current_recipient or '' }}" required>
             </div>
             <div class="col-12">
-                <button type="submit" class="btn btn-outline-primary">Save Email Settings</button>
+                <button type="submit" class="btn btn-outline-primary">Save Receiver Setting</button>
             </div>
         </form>
-        <p class="note mt-2">All newly generated keys will be sent from the configured sender to the configured receiver.</p>
+        <p class="note mt-2">All newly generated keys will be sent to the configured receiver.</p>
     </div>
 
     <div class="section mb-4">
