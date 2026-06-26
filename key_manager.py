@@ -41,11 +41,17 @@ class KeyRotationManager:
         self._next_rotation_ts = time.time() + self.interval_seconds
 
         if self.on_new_password is not None:
-            self.on_new_password(self._current_password)
+            try:
+                self.on_new_password(self._current_password)
+            except Exception as e:
+                print(f"[KeyManager] Error in on_new_password callback: {e}")
 
         if self.on_tick is not None:
-            # Immediately notify current state
-            self.on_tick(self._current_password, self.seconds_until_rotation)
+            try:
+                # Immediately notify current state
+                self.on_tick(self._current_password, self.seconds_until_rotation)
+            except Exception as e:
+                print(f"[KeyManager] Error in on_tick callback: {e}")
 
     def tick(self) -> None:
         """Call this periodically (e.g., once per second) from the GUI.
@@ -58,4 +64,7 @@ class KeyRotationManager:
             self._rotate_password()
         else:
             if self.on_tick is not None:
-                self.on_tick(self._current_password, self.seconds_until_rotation)
+                try:
+                    self.on_tick(self._current_password, self.seconds_until_rotation)
+                except Exception as e:
+                    print(f"[KeyManager] Error in on_tick callback: {e}")
