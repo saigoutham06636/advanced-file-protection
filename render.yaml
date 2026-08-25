@@ -10,7 +10,5 @@ services:
         value: 3.11.0
       - key: FLASK_SECRET_KEY
         generateValue: true
-      - key: SYSTEM_EMAIL_SENDER
-        value: "saig6961@gmail.com"
-      - key: SYSTEM_EMAIL_PASSWORD
+      - key: RESEND_API_KEY
         sync: false

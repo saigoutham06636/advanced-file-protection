@@ -29,56 +29,22 @@
         {% endwith %}
     </div>
 
-    <div class="section key-info mb-4">
-        <h2 class="h4 mb-3">System Status</h2>
-        <p>
-            <strong>Sender email:</strong>
-            {% if current_sender %}
-                <span class="badge bg-success">{{ current_sender }}</span>
-            {% else %}
-                <span class="badge bg-secondary">System Default</span>
-            {% endif %}
-        </p>
-        <p>
-            <strong>Receiver email:</strong>
-            {% if current_recipient %}
-                <span class="badge bg-success">{{ current_recipient }}</span>
-            {% else %}
-                <span class="badge bg-secondary">Not set</span>
-            {% endif %}
-        </p>
-    </div>
 
-    <div class="section mb-4">
-        <h2 class="h4 mb-3">Configure Email Settings</h2>
-        <form action="{{ url_for('set_email_settings') }}" method="post" class="row g-3">
-            <div class="col-12 col-md-6">
-                <label for="sender_email" class="form-label">Sender Gmail ID (Optional)</label>
-                <input type="email" name="sender_email" id="sender_email" class="form-control"
-                       value="{{ current_sender or '' }}" placeholder="your-email@gmail.com">
-            </div>
-            <div class="col-12 col-md-6">
-                <label for="recipient_email" class="form-label">Receiver Email</label>
-                <input type="email" name="recipient_email" id="recipient_email" class="form-control"
-                       value="{{ current_recipient or '' }}" required>
-            </div>
-            <div class="col-12">
-                <button type="submit" class="btn btn-outline-primary">Save Email Settings</button>
-            </div>
-        </form>
-        <p class="note mt-2">All newly generated keys will be sent to the configured receiver. Leave Sender fields blank to use system defaults.</p>
-    </div>
 
     <div class="section mb-4">
         <h2 class="h4 mb-3">Encrypt a File</h2>
         <form action="{{ url_for('encrypt_route') }}" method="post" enctype="multipart/form-data" class="row g-3">
-            <div class="col-12 col-md-6">
+            <div class="col-12 col-md-12">
                 <label for="file" class="form-label">Select file to encrypt</label>
                 <input type="file" name="file" id="file" class="form-control" required>
             </div>
             <div class="col-12 col-md-6">
                 <label for="pin" class="form-label">6-Digit PIN</label>
                 <input type="text" name="pin" id="pin" class="form-control" pattern="\d{6}" maxlength="6" minlength="6" placeholder="e.g. 123456" required>
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="receiver_email" class="form-label">Receiver Email</label>
+                <input type="email" name="receiver_email" id="receiver_email" class="form-control" placeholder="friend@example.com" required>
             </div>
             <div class="col-12">
                 <button type="submit" class="btn btn-primary">Encrypt with PIN</button>
