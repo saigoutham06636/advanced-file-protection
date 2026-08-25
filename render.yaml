@@ -13,4 +13,4 @@ services:
       - key: SYSTEM_EMAIL_SENDER
         value: "saig6961@gmail.com"
       - key: SYSTEM_EMAIL_PASSWORD
-        value: "oxnwmhlxstrkviia"
+        sync: false

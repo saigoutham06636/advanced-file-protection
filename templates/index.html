@@ -30,7 +30,15 @@
     </div>
 
     <div class="section key-info mb-4">
-        <h2 class="h4 mb-3">Key Rotation Status</h2>
+        <h2 class="h4 mb-3">System Status</h2>
+        <p>
+            <strong>Sender email:</strong>
+            {% if current_sender %}
+                <span class="badge bg-success">{{ current_sender }}</span>
+            {% else %}
+                <span class="badge bg-secondary">System Default</span>
+            {% endif %}
+        </p>
         <p>
             <strong>Receiver email:</strong>
             {% if current_recipient %}
@@ -39,88 +47,67 @@
                 <span class="badge bg-secondary">Not set</span>
             {% endif %}
         </p>
-        <p><strong>Next rotation in:</strong>
-           <span id="seconds-left" class="badge bg-primary">{{ seconds_left }} seconds</span>
-        </p>
-        <p class="note mt-2">
-            A high-entropy key is generated automatically every configured interval and sent only
-            to the receiver email configured below. The key itself is never displayed on this page.
-        </p>
     </div>
 
     <div class="section mb-4">
         <h2 class="h4 mb-3">Configure Email Settings</h2>
         <form action="{{ url_for('set_email_settings') }}" method="post" class="row g-3">
             <div class="col-12 col-md-6">
-                <label for="recipient_email" class="form-label">Receiver email</label>
+                <label for="sender_email" class="form-label">Sender Gmail ID (Optional)</label>
+                <input type="email" name="sender_email" id="sender_email" class="form-control"
+                       value="{{ current_sender or '' }}" placeholder="your-email@gmail.com">
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="recipient_email" class="form-label">Receiver Email</label>
                 <input type="email" name="recipient_email" id="recipient_email" class="form-control"
                        value="{{ current_recipient or '' }}" required>
             </div>
             <div class="col-12">
-                <button type="submit" class="btn btn-outline-primary">Save Receiver Setting</button>
+                <button type="submit" class="btn btn-outline-primary">Save Email Settings</button>
             </div>
         </form>
-        <p class="note mt-2">All newly generated keys will be sent to the configured receiver.</p>
+        <p class="note mt-2">All newly generated keys will be sent to the configured receiver. Leave Sender fields blank to use system defaults.</p>
     </div>
 
     <div class="section mb-4">
         <h2 class="h4 mb-3">Encrypt a File</h2>
         <form action="{{ url_for('encrypt_route') }}" method="post" enctype="multipart/form-data" class="row g-3">
-            <div class="col-12">
+            <div class="col-12 col-md-6">
                 <label for="file" class="form-label">Select file to encrypt</label>
                 <input type="file" name="file" id="file" class="form-control" required>
             </div>
+            <div class="col-12 col-md-6">
+                <label for="pin" class="form-label">6-Digit PIN</label>
+                <input type="text" name="pin" id="pin" class="form-control" pattern="\d{6}" maxlength="6" minlength="6" placeholder="e.g. 123456" required>
+            </div>
             <div class="col-12">
-                <button type="submit" class="btn btn-primary">Encrypt with Current Key</button>
+                <button type="submit" class="btn btn-primary">Encrypt with PIN</button>
             </div>
         </form>
-        <p class="note mt-2">The selected file will be encrypted on the server using the currently active password and protected with AES-256-GCM. The encrypted file will be offered as a download.</p>
+        <p class="note mt-2">The selected file will be encrypted on the server using the provided 6-digit PIN. The PIN will be emailed to the receiver, and the encrypted file will be offered as a download.</p>
     </div>
 
     <div class="section mb-4">
         <h2 class="h4 mb-3">Decrypt a File</h2>
         <form action="{{ url_for('decrypt_route') }}" method="post" enctype="multipart/form-data" class="row g-3">
-            <div class="col-12">
+            <div class="col-12 col-md-6">
                 <label for="enc_file" class="form-label">Select encrypted file (.enc)</label>
                 <input type="file" name="enc_file" id="enc_file" class="form-control" required>
             </div>
-            <div class="col-12">
-                <label for="password" class="form-label">Enter corresponding password (from email)</label>
-                <input type="password" name="password" id="password" class="form-control" required>
+            <div class="col-12 col-md-6">
+                <label for="password" class="form-label">Enter 6-Digit PIN (from email)</label>
+                <input type="text" name="password" id="password" class="form-control" pattern="\d{6}" maxlength="6" minlength="6" required>
             </div>
             <div class="col-12">
                 <button type="submit" class="btn btn-success">Decrypt</button>
             </div>
         </form>
         <p class="note mt-2">
-            Use the same password that was active at the time of encryption, not necessarily the
-            current key shown above. If decryption fails, check your email history for the
-            correct key corresponding to the moment you encrypted the file.
+            Use the exact 6-digit PIN that was provided via email to decrypt this file.
         </p>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    (function() {
-        const secondsEl = document.getElementById('seconds-left');
 
-        async function refreshStatus() {
-            try {
-                const resp = await fetch('/api/status');
-                if (!resp.ok) return;
-                const data = await resp.json();
-
-                if (typeof data.secondsLeft === 'number' && secondsEl) {
-                    secondsEl.textContent = data.secondsLeft + ' seconds';
-                }
-            } catch (e) {
-                // Ignore network errors for demo; UI will just stop updating.
-            }
-        }
-
-        // Poll backend every second for live countdown updates
-        setInterval(refreshStatus, 1000);
-    })();
-</script>
 </body>
 </html>
